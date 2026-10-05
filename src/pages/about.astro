@@ -37,8 +37,33 @@ const orgsByGroup = organizationGroups.map((g) => ({
 /** Three most recent roles. */
 const experienceSnapshot = experienceSorted.slice(0, 3);
 
-/** The groups' names, as a flat index of what the work covers. */
-const skillIndex = skillGroups.map((g) => g.title);
+/**
+ * WHAT I LEAD WITH — four of the nine groups, not all nine.
+ *
+ * The source material covers nine areas, and listing every one of them turned
+ * this row into a table of contents: it read as "I do everything", which is the
+ * opposite of the narrowing the brief asks for. /skills carries the complete
+ * inventory and this block links to it, so nothing is hidden by showing less.
+ *
+ * CHOSEN BY EVIDENCE, NOT PREFERENCE. All four are anchored in documented work:
+ * the published research (KNN, Naive Bayes), the analytics on two internships
+ * (Looker Studio at PLN Pusharlis, Excel and Sheets in the Beauty Innovation
+ * data system), and the systems themselves (Google Apps Script there, Python,
+ * SQL and JavaScript across the project record). The remaining five — ML,
+ * networking, IT support, office and collaboration tooling, design — are real
+ * but sit further from the work this site is positioning.
+ */
+const FEATURED_SKILLS = [
+  'Data Analytics & Visualization',
+  'Programming & Database',
+  'Business Process & Analysis',
+  'Design & Creative',
+];
+
+/** Resolved against the data so a renamed group can never silently vanish. */
+const skillIndex = FEATURED_SKILLS.map(
+  (title) => skillGroups.find((g) => g.title === title)?.title,
+).filter((t): t is string => Boolean(t));
 
 /**
  * INTERESTS — the four positioning axes, one plain sentence each. Labels come
@@ -538,22 +563,16 @@ const meta = [
   .ab-sk__grid {
     display: grid;
     gap: 0.6rem 1rem;
-    grid-template-columns: 1fr;
+    /*
+      `auto-fit` rather than fixed column counts. The list is a curated four
+      instead of the full nine, and fixed counts left one orphan sitting alone on
+      a second row at desktop width. With a minimum track the row resolves itself:
+      four across when there is room, two on a tablet, one on a phone.
+    */
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-
-  @media (min-width: 640px) {
-    .ab-sk__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1020px) {
-    .ab-sk__grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
   }
 
   .ab-sk__item {

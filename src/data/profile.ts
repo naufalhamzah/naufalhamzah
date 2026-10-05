@@ -50,7 +50,7 @@ export interface Profile {
 
 const rawProfile: Profile = {
   name: 'Hamzah Naufal Zuhdi',
-  shortName: 'Hamzah Naufal',
+  shortName: 'Hamzah',
   initials: 'HNZ',
 
   /* PRIMARY IDENTITY. The brief is explicit: the site must lead with
