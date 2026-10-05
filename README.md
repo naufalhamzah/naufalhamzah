@@ -16,7 +16,7 @@ one screen, and each section links through to a full page.
 | Types | **TypeScript** (strict) | Content is typed; a missing field fails the build. |
 | Styles | **Tailwind CSS v4** + design tokens | One token file drives the whole visual system. |
 | Validation | **Zod** | Content files are parsed at load, so gaps fail loudly. |
-| Islands | **React** — exactly one | Only the project filter needs client state. |
+| Islands | **React** — exactly one | Only the project filter needs client state. The homepage adds ~600 B of inline JS for the hero's pointer drift. |
 | Icons | **simple-icons** + local fallbacks | Official marks where redistributable. |
 | Images | **sharp** via `scripts/build-assets.mjs` | 344 MB of source → 7.7 MB of WebP. |
 | Fonts | `@fontsource-variable` (self-hosted) | No external requests, no layout shift. |
@@ -75,7 +75,7 @@ src/
 │   ├── layout/              Navbar, Footer, ThemeToggle
 │   ├── ui/                  reusable primitives (cards, collage, lightbox…)
 │   ├── sections/            homepage preview sections
-│   └── islands/             the React filter (the only client JS)
+│   └── islands/             the React filter — the only bundled client JS
 │
 ├── pages/                   one file per route
 │   ├── index.astro          homepage — 6 curated previews only

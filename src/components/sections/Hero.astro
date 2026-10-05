@@ -498,14 +498,69 @@ const axes = profile.positioning;
     );
   }
 
-  /* On paper the shadows have to be softer and warmer — a hard black drop on
-     ivory reads as dirt rather than depth. */
+  /*
+    LIGHT THEME: A TIGHT STACK, NO WIDE AMBIENT BLUR.
+
+    The dark theme's fourth shadow — 34px offset at 56px blur — is invisible on a
+    near-black canvas, but on ivory it spreads into a warm haze. Measured on the
+    live page across the figure's mid-body it reached a 36-unit colour step, and
+    because the haze covers the image's whole WIDTH it reads as a rectangular
+    panel behind the portrait rather than as depth. Confirmed by sampling: the
+    step was 0 above the head, where no body casts a shadow, and peaked exactly
+    where the torso is widest.
+
+    So on paper the stack stops at the soft shadow. Three drop-shadows still seat
+    the figure (contact, mid, soft) without drawing a box around it.
+  */
   :global([data-theme='light']) .hero__img {
     filter: var(--photo-filter) drop-shadow(
-        0 1px 2px rgba(62, 46, 30, 0.24)
-      ) drop-shadow(0 4px 10px rgba(62, 46, 30, 0.15))
-      drop-shadow(0 14px 26px rgba(62, 46, 30, 0.14))
-      drop-shadow(0 32px 56px rgba(62, 46, 30, 0.18));
+        0 1px 2px rgba(62, 46, 30, 0.28)
+      ) drop-shadow(0 5px 12px rgba(62, 46, 30, 0.12))
+      drop-shadow(0 16px 30px rgba(62, 46, 30, 0.08));
+  }
+
+  /*
+    INTERACTION — small, and only where a pointer exists.
+
+    The figure drifts a few pixels toward the cursor so the portrait reads as a
+    plane in front of the page rather than a picture pasted onto it. The script at
+    the foot of this file writes `--par-x` / `--par-y`; with no script they stay
+    at zero and every rule below collapses to a no-op, so this is an enhancement
+    rather than a dependency.
+  */
+  .hero__figure {
+    transform: translate3d(var(--par-x, 0px), var(--par-y, 0px), 0);
+    transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* The portrait resolves rather than snapping in. Opacity only, so the hover
+     transform below is free to use `transform` for itself. */
+  .hero__img {
+    animation: hero-img-in 900ms var(--ease) 90ms both;
+  }
+
+  @keyframes hero-img-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Hover acknowledges the pointer with a lift and a marginally deeper shadow.
+     `hover: hover` keeps it off touch devices, where a tap would leave the
+     figure stuck in its hover state. */
+  @media (hover: hover) and (pointer: fine) {
+    .hero__img {
+      transition:
+        transform 520ms var(--ease),
+        filter 520ms var(--ease);
+    }
+
+    .hero__figure:hover .hero__img {
+      transform: translateY(-4px) scale(1.012);
+    }
   }
 
   .hero__meta {
@@ -532,14 +587,17 @@ const axes = profile.positioning;
 
   @media (max-width: 939px) {
     /*
-      Portrait first, capped hard. The cap matters more on a cut-out: at full
-      width a 3:4 figure would be ~530px of free-floating person with nothing
-      containing it, so capping the column keeps it an introduction rather than a
-      full-bleed poster.
+      Portrait first, and given more room than the 13rem it used to take. At
+      13rem (~208px) the figure rendered under 190px tall on a phone — the face
+      was too small to read as a person, which is the same defect the desktop
+      column had at 0.78fr. 17rem keeps it an introduction rather than a
+      full-bleed poster while letting the face carry.
     */
     .hero__figure {
       order: -1;
-      max-width: 13rem;
+      width: 100%;
+      max-width: 17rem;
+      margin-inline: auto;
     }
 
     /* The surname's trailing rule shortens on narrow screens so it never wraps
@@ -566,6 +624,16 @@ const axes = profile.positioning;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* The drift is decoration, so it is removed rather than softened. */
+    .hero__figure {
+      transform: none;
+      transition: none;
+    }
+
+    .hero__img {
+      animation: none;
+    }
+
     /* The pulse is decoration. A visitor who asked for less motion gets a still
        dot rather than a disabled one — the status fact is in the text either
        way. */
@@ -580,3 +648,54 @@ const axes = profile.positioning;
     }
   }
 </style>
+<script>
+  /*
+    POINTER DRIFT — a few pixels, nothing more.
+
+    Kept deliberately tiny, because the site otherwise ships no client JavaScript
+    outside /projects and that is worth preserving. This is the one exception: a
+    CSS-only parallax needs `animation-timeline: view()`, which cannot follow a
+    cursor.
+
+    Not a dependency. The CSS reads `--par-x` / `--par-y` with a 0px fallback, so
+    with this script blocked or failing the portrait simply sits still — no
+    layout shift, no missing content.
+
+    Skipped entirely when the visitor asked for reduced motion, and on touch
+    devices, where there is no cursor to follow.
+  */
+  const hero = document.querySelector<HTMLElement>('.hero');
+  const figure = document.querySelector<HTMLElement>('.hero__figure');
+  const wantsStill = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const hasPointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+  if (hero && figure && hasPointer.matches && !wantsStill.matches) {
+    const STRENGTH = 10;
+    let tx = 0;
+    let ty = 0;
+    let frame = 0;
+
+    const apply = () => {
+      frame = 0;
+      figure.style.setProperty('--par-x', tx.toFixed(2) + 'px');
+      figure.style.setProperty('--par-y', ty.toFixed(2) + 'px');
+    };
+
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+
+    hero.addEventListener('pointermove', (event: PointerEvent) => {
+      const r = hero.getBoundingClientRect();
+      tx = ((event.clientX - r.left) / r.width - 0.5) * 2 * STRENGTH;
+      ty = ((event.clientY - r.top) / r.height - 0.5) * 2 * STRENGTH;
+      queue();
+    });
+
+    hero.addEventListener('pointerleave', () => {
+      tx = 0;
+      ty = 0;
+      queue();
+    });
+  }
+</script>

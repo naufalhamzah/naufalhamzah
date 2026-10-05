@@ -45,7 +45,8 @@ export default defineConfig({
   // Disabled on purpose: the toolbar renders a floating bar over the bottom of
   // every dev page and injects ~15 extra script requests per route, which hides
   // content during layout review and makes a dev network trace look nothing like
-  // production. The site ships zero client JS outside /projects.
+  // production. The site ships only the /projects React island and one small
+  // inline script on the homepage (the hero's pointer drift).
   devToolbar: { enabled: false },
 
   vite: {
